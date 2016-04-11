@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+
+    <!-- Always force latest IE rendering engine or request Chrome Frame -->
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>HeadTrackr </title>
+    <!--<link rel="stylesheet" type="text/css" href="css/estilo.css">-->
+
+
+    <script src="/js/headtrackr.js" type="text/javascript"></script>
+    <script src="/js/clmtrackr.js" type="text/javascript"></script>
+    <script src="/models/model_pca_20_svm.js"></script>
+
+    <!-- This includes Flocking and all its dependencies, including jQuery 2.1.3 and Infusion -->
+    <script src="/dist/flocking-all.js"></script>
+    <script src="/sounds/whiteNoise.js" type="text/javascript"></script>
+  </head>
+
+  <body class="index">
+
+      <canvas id="inputCanvas" >
+        <video id="inputVideo" width="600" height="320" autoplay loop></video>
+      </canvas>
+
+      <h1 id="pos1"></h1>
+      <h1 id="pos2"></h1>
+      <h1 id="pos3"></h1>
+      <h1 id="pos4"></h1>
+      <h1 id="pos5"></h1>
+      <h1 id="pos6"></h1>
+
+      <script type="text/javascript">
+        var videoInput = document.getElementById('inputVideo');
+        var canvasInput = document.getElementById('inputCanvas');
+
+        var pos1 = document.getElementById('pos1');
+        var pos2 = document.getElementById('pos2');
+        var pos3 = document.getElementById('pos3');
+        var pos4 = document.getElementById('pos4');
+        var pos5 = document.getElementById('pos5');
+        var pos6 = document.getElementById('pos6');
+        
+        var htracker = new headtrackr.Tracker();        
+
+        htracker.init(videoInput, canvasInput);
+        htracker.start();  
+
+        var ctracker = new clm.tracker();
+        ctracker.init(pModel);
+        ctracker.start(videoInput);       
+        
+      </script>
+
+      <script>      
+        function positionLoop() {
+          requestAnimationFrame(positionLoop);
+          var positions = ctracker.getCurrentPosition();
+
+          //pos1.innerHTML = positions[1][0].toFixed(0);
+
+          //pos1.innerHTML = "Posicion1 X: " + Math.abs(Number((positions[62][0]).toFixed(0)) - Number((positions[1][0]).toFixed(0)));
+          
+          //pos2.innerHTML = "Posicion2 Y: " + Math.abs(Number((positions[13][0]).toFixed(0)) - Number((positions[62][0]).toFixed(0)));
+
+          /*Nariz
+            positions[62][0].toFixed(2)
+            positions[62][1].toFixed(2)            
+          */
+          /*
+            ojo izquierdo 
+              positions[32][0].toFixed(2)
+              positions[32][1].toFixed(2)
+            ojo derecho
+              positions[27][0].toFixed(2)
+              positions[27][1].toFixed(2)
+          */
+          var narizX = positions[62][0].toFixed(2);
+          var narizY = positions[62][1].toFixed(2);
+          var ojo1X = positions[32][0].toFixed(2);
+          var ojo1Y = positions[32][1].toFixed(2);
+          var ojo2X = positions[27][0].toFixed(2);
+          var ojo2Y = positions[27][1].toFixed(2);
+
+          pos2.innerHTML(Number(narizX-ojo1X));
+          pos3.innerHTML(Number(narizX-ojo2X));
+
+          if (narizX - ojo1X < 5) {            
+            pos5.innerHTML = "izquierda";
+          } else if (narizX - ojo2X > 5) {            
+            pos5.innerHTML = "derecha";
+          } else {
+            pos5.innerHTML = "centro";
+          }
+
+          
+
+/*
+          if (Math.abs(Number((positions[62][0]).toFixed(0)) - Number((positions[1][0]).toFixed(0))) < 20) {
+            
+          }
+          else if (Math.abs(Number((positions[13][0]).toFixed(0)) - Number((positions[62][0]).toFixed(0))) < 20) {
+            pos5.innerHTML = "derecha";
+          }
+          else {
+            pos5.innerHTML = "centro";
+          }*/
+        }
+        positionLoop();
+      </script>
+
+      <button onclick="whiteNoise.play();">ON</button>
+
+  </body>
+</html>
