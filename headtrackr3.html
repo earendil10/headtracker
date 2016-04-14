@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" data-xlabs-extension="1" data-xlabs-extension-ready="1" data-xlabs-extension-version="2.5.5">
+	<head>
+		<title>Face tracker</title>
+		<meta charset="utf-8">		
+
+		<style>
+			#overlay {
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				-o-transform : scaleX(-1);
+				-webkit-transform : scaleX(-1);
+				transform : scaleX(-1);
+				-ms-filter : fliph; /*IE*/
+				filter : fliph; /*IE*/
+
+				width : 640px;
+				height : 480px;
+			}
+
+			#canvasSeguimiento {
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				-o-transform : scaleX(-1);
+				-webkit-transform : scaleX(-1);
+				transform : scaleX(-1);
+				-ms-filter : fliph; /*IE*/
+				filter : fliph; /*IE*/
+
+				width : 640px;
+				height : 480px;
+			}
+
+
+			#videoel {
+				-o-transform : scaleX(-1);
+				-webkit-transform : scaleX(-1);
+				transform : scaleX(-1);
+				-ms-filter : fliph; /*IE*/
+				filter : fliph; /*IE*/
+
+				width : 640px;
+				height : 480px;
+			}
+			
+			#container {
+				position : relative;
+				width : 370px;
+			}
+			
+			#content {
+				margin-top : 50px;
+				margin-left : auto;
+				margin-right : auto;
+				max-width: 640px;
+			}
+
+			#sketch, #filter {
+				display: none;
+			}
+
+			.btn {
+				font-family: 'Lato';
+				font-size: 16px;
+			}
+
+			#controls {
+				text-align : center;
+			}
+		</style>
+		<script>
+			// getUserMedia only works over https in Chrome 47+, so we redirect to https. Also notify user if running from file.
+			if (window.location.protocol == "file:") {
+				alert("You seem to be running this example directly from a file. Note that these examples only work when served from a server or localhost due to canvas cross-domain restrictions.");
+			} else if (window.location.hostname !== "localhost" && window.location.protocol !== "https:"){
+				window.location.protocol = "https";
+			}
+		</script>
+		<style type="text/css">#xLabsCanvas{pointer-events:none;top:0;left:0;position:fixed;z-index:2147483646;}#xLabsCanvas.allow-pointer{pointer-events:auto;}</style>
+	</head>
+	<body>
+		<div id="content">		
+			<div id="container">
+				<script src="../js/utils.js"></script>
+				<!--<script type="text/javascript" src="../js/jsfeat-min.js"></script>-->
+				<script type="text/javascript" src="../js/clmtrackr.js"></script>
+				<!--<script type="text/javascript" src="../js/compatibility.js"></script>-->
+				<script type="text/javascript" src="../models/model_spca_20_svm.js"></script>
+
+				<video id="videoel" width="640" height="480" preload="auto" loop="" ></video>
+				<canvas id="overlay" width="640" height="480"></canvas>
+				<canvas id="canvasSeguimiento" width="640" height="480"></canvas>
+
+				<div id="controls">
+					<input class="btn" type="button" value="Calibrar puntos" onclick="startCalibration()" id="startCalibration">
+					<input class="btn" type="button" value="Iniciar mascara" onclick="startMask()" id="maskbutton">
+					<p id="mensaje1">No calibrado</p>
+					<p id="mensaje2"></p>
+					<p id="mensaje3"></p>
+					<p id="mensaje4"></p>
+					<p id="mensaje5"></p>
+					<p id="mensaje6"></p>
+					<p id="mensaje7"></p>
+					<p id="mensaje8"></p>
+				</div>
+
+				<script>
+					var vid = document.getElementById('videoel');
+					var overlay = document.getElementById('overlay');
+					var overlayCC = overlay.getContext('2d');
+
+					var seguimiento = document.getElementById('canvasSeguimiento');
+					var seguimientoCC = seguimiento.getContext('2d');
+
+					seguimientoCC.fillStyle = "rgb(0,255,0)";
+                	seguimientoCC.strokeStyle = "rgb(0,255,0)";
+
+					//INICIALIZACION ESTRUCTURAS
+					var curr_img_pyr, prev_img_pyr, point_count, point_status, prev_xy, curr_xy, options;					
+
+					curr_img_pyr = new jsfeat.pyramid_t(3);
+					prev_img_pyr = new jsfeat.pyramid_t(3);
+					curr_img_pyr.allocate(640, 480, jsfeat.U8_t|jsfeat.C1_t);
+					prev_img_pyr.allocate(640, 480, jsfeat.U8_t|jsfeat.C1_t);
+
+					point_count = 0;
+					point_status = new Uint8Array(100);
+					prev_xy = new Float32Array(3*2);
+					curr_xy = new Float32Array(3*2);
+
+					var demo_opt = function(){
+		                this.win_size = 20;
+		                this.max_iterations = 30;
+		                this.epsilon = 0.01;
+		                this.min_eigen = 0.001;
+		            }
+
+		            options = new demo_opt();
+
+					var mask = false;					
+
+					function startMask() {
+						if (!mask) mask = true;
+						else mask = false;
+					}
+
+					navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+					window.URL = window.URL || window.webkitURL || window.msURL || window.mozURL;
+
+					if (navigator.getUserMedia) {
+						
+						var videoSelector = {video : true};
+						if (window.navigator.appVersion.match(/Chrome\/(.*?) /)) {
+							var chromeVersion = parseInt(window.navigator.appVersion.match(/Chrome\/(\d+)\./)[1], 10);
+							if (chromeVersion < 20) {
+								videoSelector = "video";
+							}
+						};
+					
+						navigator.getUserMedia(videoSelector, function( stream ) {
+							if (vid.mozCaptureStream) {
+								vid.mozSrcObject = stream;
+							} else {
+								vid.src = (window.URL && window.URL.createObjectURL(stream)) || stream;
+							}
+							vid.play();
+						}, function() {
+							alert("There was some problem trying to fetch video from your webcam. If you have a webcam, please make sure to accept when the browser asks for access to your webcam.");
+						});
+					} else {					
+						alert("This demo depends on getUserMedia, which your browser does not seem to support. :(");
+					}
+	
+					var ctrack = new clm.tracker({useWebGL : true});
+					ctrack.init(pModel);
+
+					function startVideo() {
+						vid.play();
+						ctrack.start(vid);
+						drawLoop();
+					}		
+
+					var calibrado = false;
+
+					function startCalibration() {
+
+						//Montamos el frame de referencia
+						overlayCC.drawImage(vid, 0, 0, 640, 480);
+						var imageData = overlayCC.getImageData(0, 0, 640, 480);
+						
+						jsfeat.imgproc.grayscale(imageData.data[0], 640, 480, prev_img_pyr.data[0]);
+
+						prev_img_pyr.build(prev_img_pyr.data[0], true);
+
+						//Cogemos los puntos de referencia (ojos y nariz)
+						var positions = ctrack.getCurrentPosition();
+						var npuntos = 0;						
+
+						//Ojos
+						prev_xy[npuntos*2] = positions[25][0];
+						prev_xy[npuntos*2+1] = positions[25][1];
+						npuntos++;
+
+						prev_xy[npuntos*2] = positions[30][0];
+						prev_xy[npuntos*2+1] = positions[30][1];
+						npuntos++;
+
+						//Nariz
+						prev_xy[npuntos*2] = positions[62][0];
+						prev_xy[npuntos*2+1] = positions[62][1];			
+
+						calibrado = true;
+					}			
+
+					startVideo();			
+
+					function drawLoop() {						
+						var mens1 = document.getElementById('mensaje1');
+						var mens2 = document.getElementById('mensaje2');
+						var mens3 = document.getElementById('mensaje3');
+						var mens4 = document.getElementById('mensaje4');
+						var mens5 = document.getElementById('mensaje5');
+						var mens6 = document.getElementById('mensaje6');
+						var mens7 = document.getElementById('mensaje7');
+						var mens8 = document.getElementById('mensaje8');
+
+						point_count = 0;
+
+						requestAnimFrame(drawLoop);
+						overlayCC.clearRect(0, 0, 640, 480);
+						var positions = ctrack.getCurrentPosition();						
+	
+						if (mask)	ctrack.draw(overlay);
+
+						if (calibrado) {							
+							
+							var imageData = overlayCC.getImageData(0, 0, 640, 480);
+
+							curr_img_pyr = new jsfeat.pyramid_t(3);				
+							curr_img_pyr.allocate(640, 480, jsfeat.U8_t|jsfeat.C1_t);
+						
+							jsfeat.imgproc.grayscale(imageData.data[0], 640, 480, curr_img_pyr.data[0]);
+							
+							curr_img_pyr.build(curr_img_pyr.data[0], true);
+							
+							curr_xy[point_count*2] = positions[25][0];
+							curr_xy[point_count*2+1] = positions[25][1];
+							point_count++;		
+							
+							curr_xy[point_count*2] = positions[30][0];
+							curr_xy[point_count*2+1] = positions[30][1];
+							point_count++;
+		
+
+							curr_xy[point_count*2] = positions[62][0];
+							curr_xy[point_count*2+1] = positions[62][1];
+							point_count++;	
+							mens1.innerHTML = curr_xy;		
+						
+
+							jsfeat.optical_flow_lk.track(prev_img_pyr, curr_img_pyr, prev_xy, curr_xy, point_count, options.win_size|0, options.max_iterations|0, point_status, options.epsilon, options.min_eigen);		
+							mens2.innerHTML = curr_xy;					
+
+							//prune_oflow_points(overlayCC);														
+						} 
+					} 
+
+					function draw_circle(ctx, x, y) {
+		                ctx.beginPath();
+		                ctx.arc(x, y, 4, 0, Math.PI*2, true);
+		                ctx.closePath();
+		                ctx.fill();
+		            }
+
+					function prune_oflow_points(ctx) {
+		                var n = point_count;
+		                var i=0,j=0;
+
+		                for(; i < n; ++i) {
+		                    if(point_status[i] == 1) {
+		                        if(j < i) {
+		                            curr_xy[j<<1] = curr_xy[i<<1];
+		                            curr_xy[(j<<1)+1] = curr_xy[(i<<1)+1];
+		                        }
+		                        draw_circle(ctx, curr_xy[j<<1], curr_xy[(j<<1)+1]);
+		                        ++j;
+		                    }
+		                }
+		                point_count = j;
+		            }
+
+				</script>
+			</div>
+		</div>
+	</body>
+
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en" data-xlabs-extension="1" data-xlabs-extension-ready="1" data-xlabs-extension-version="2.5.5">
+	<head>
+		<title>Face tracker</title>
+		<meta charset="utf-8">		
+
+		<style>
+			#overlay {
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				-o-transform : scaleX(-1);
+				-webkit-transform : scaleX(-1);
+				transform : scaleX(-1);
+				-ms-filter : fliph; /*IE*/
+				filter : fliph; /*IE*/
+
+				width : 640px;
+				height : 480px;
+			}
+
+			#canvasSeguimiento {
+				position: absolute;
+				top: 0px;
+				left: 0px;
+				-o-transform : scaleX(-1);
+				-webkit-transform : scaleX(-1);
+				transform : scaleX(-1);
+				-ms-filter : fliph; /*IE*/
+				filter : fliph; /*IE*/
+
+				width : 640px;
+				height : 480px;
+			}
+
+
+			#videoel {
+				-o-transform : scaleX(-1);
+				-webkit-transform : scaleX(-1);
+				transform : scaleX(-1);
+				-ms-filter : fliph; /*IE*/
+				filter : fliph; /*IE*/
+
+				width : 640px;
+				height : 480px;
+			}
+			
+			#container {
+				position : relative;
+				width : 370px;
+			}
+			
+			#content {
+				margin-top : 50px;
+				margin-left : auto;
+				margin-right : auto;
+				max-width: 640px;
+			}
+
+			#sketch, #filter {
+				display: none;
+			}
+
+			.btn {
+				font-family: 'Lato';
+				font-size: 16px;
+			}
+
+			#controls {
+				text-align : center;
+			}
+		</style>
+		<script>
+			// getUserMedia only works over https in Chrome 47+, so we redirect to https. Also notify user if running from file.
+			if (window.location.protocol == "file:") {
+				alert("You seem to be running this example directly from a file. Note that these examples only work when served from a server or localhost due to canvas cross-domain restrictions.");
+			} else if (window.location.hostname !== "localhost" && window.location.protocol !== "https:"){
+				window.location.protocol = "https";
+			}
+		</script>
+		<style type="text/css">#xLabsCanvas{pointer-events:none;top:0;left:0;position:fixed;z-index:2147483646;}#xLabsCanvas.allow-pointer{pointer-events:auto;}</style>
+	</head>
+	<body>
+		<div id="content">		
+			<div id="container">
+				<script src="../js/utils.js"></script>				
+				<script type="text/javascript" src="../js/clmtrackr.js"></script>				
+				<script type="text/javascript" src="../models/model_spca_20_svm.js"></script>
+
+				<video id="videoel" width="640" height="480" preload="auto" loop="" ></video>
+				<canvas id="overlay" width="640" height="480"></canvas>
+
+				<div id="controls">
+					<input class="btn" type="button" value="Calibrar puntos" onclick="startCalibration()" id="startCalibration">
+					<input class="btn" type="button" value="Iniciar mascara" onclick="startMask()" id="maskbutton">
+					<p id="mensaje1">No calibrado</p>
+					<p id="mensaje2"></p>
+					<p id="mensaje3"></p>					
+				</div>
+
+				<script>
+					var vid = document.getElementById('videoel');
+					var overlay = document.getElementById('overlay');
+					var overlayCC = overlay.getContext('2d');
+					
+					var mask = false;					
+
+					function startMask() {
+						if (!mask) mask = true;
+						else mask = false;
+					}
+
+					navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+					window.URL = window.URL || window.webkitURL || window.msURL || window.mozURL;
+
+					if (navigator.getUserMedia) {
+						
+						var videoSelector = {video : true};
+						if (window.navigator.appVersion.match(/Chrome\/(.*?) /)) {
+							var chromeVersion = parseInt(window.navigator.appVersion.match(/Chrome\/(\d+)\./)[1], 10);
+							if (chromeVersion < 20) {
+								videoSelector = "video";
+							}
+						};
+					
+						navigator.getUserMedia(videoSelector, function( stream ) {
+							if (vid.mozCaptureStream) {
+								vid.mozSrcObject = stream;
+							} else {
+								vid.src = (window.URL && window.URL.createObjectURL(stream)) || stream;
+							}
+							vid.play();
+						}, function() {
+							alert("There was some problem trying to fetch video from your webcam. If you have a webcam, please make sure to accept when the browser asks for access to your webcam.");
+						});
+					} else {					
+						alert("This demo depends on getUserMedia, which your browser does not seem to support. :(");
+					}
+	
+					var ctrack = new clm.tracker({useWebGL : true});
+					ctrack.init(pModel);
+
+					function startVideo() {
+						vid.play();
+						ctrack.start(vid);
+						drawLoop();
+					}		
+
+					var calibrado = false;
+					var nariz = new Float32Array(4);
+					var longitudBase = 0;
+
+
+					function startCalibration() {					
+						var mens1 = document.getElementById('mensaje1');
+
+						//Cogemos los puntos de referencia (ojos y nariz)
+						var positions = ctrack.getCurrentPosition();
+
+						nariz[0] = positions[33][0];
+						nariz[1] = positions[33][1];
+						nariz[2] = positions[62][0];
+						nariz[3] = positions[62][1];
+
+						var x = nariz[2]-nariz[0];
+						var y = nariz[3]-nariz[1];
+
+						x = Math.pow(x,2);
+						y = Math.pow(y,2);
+
+						longitudBase = Math.sqrt(x+y);
+
+						calibrado = true;
+						mens1.innerHTML = "Calibrado!";
+					}			
+
+					startVideo();	
+
+					var longitud = 0;
+
+					function changeBackground(color) {
+					   document.body.style.background = color;
+					}			
+
+					function drawLoop() {						
+						
+						var mens2 = document.getElementById('mensaje2');
+						var mens3 = document.getElementById('mensaje3');
+
+						requestAnimFrame(drawLoop);
+						overlayCC.clearRect(0, 0, 640, 480);
+						var positions = ctrack.getCurrentPosition();					
+	
+						if (mask)	ctrack.draw(overlay);
+
+						if (calibrado) {
+							nariz[0] = positions[33][0];
+							nariz[1] = positions[33][1];
+							nariz[2] = positions[62][0];
+							nariz[3] = positions[62][1];
+
+							var x = nariz[2]-nariz[0];
+							var y = nariz[3]-nariz[1];
+
+							x = Math.pow(x,2);
+							y = Math.pow(y,2);
+
+							longitud = Math.sqrt(x+y);
+
+							var c1 = nariz[2] - nariz[0];
+							var c2 = nariz[3] - nariz[1];
+
+							var angulo = Math.atan(c1/c2);
+							//mens2.innerHTML = angulo;
+
+							if (angulo > -0.15 && angulo < 0.15) {								
+								if (longitud > longitudBase*1.1) {
+									changeBackground("RED");
+								} else if (longitud < longitudBase*0.9) {
+									changeBackground("BLUE");
+								} else {
+									changeBackground("WHITE");
+								}
+							} else if (angulo > 0.15) {
+								changeBackground("PINK");
+							} else if (angulo < 0.15) {
+								changeBackground("YELLOW");									
+							} 														
+						} 
+					} 	
+
+				</script>
+			</div>
+		</div>
+	</body>
+
+</html>
