@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+	<head>
+		<meta charset='utf-8'/>
+		<title>TFG Head/Eye Tracker</title>
+		<link rel="stylesheet" href="styles/estilo.css">
+		<link rel="stylesheet" href="js/estiloFaceColor.css">		
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+		<script src="js/scriptIndex.js"></script>
+
+		<script>
+			// getUserMedia only works over https in Chrome 47+, so we redirect to https. Also notify user if running from file.
+			if (window.location.protocol == "file:") {
+				alert("You seem to be running this example directly from a file. Note that these examples only work when served from a server or localhost due to canvas cross-domain restrictions.");
+			} else if (window.location.hostname !== "localhost" && window.location.protocol !== "https:"){
+				window.location.protocol = "https";
+			}
+		</script>
+	</head>
+	<body>
+		<div id='contenido'>
+			<header>
+				<hgroup>
+					<h1>TFG HeadTracker & EyeTracker</h1>
+				</hgroup>
+			</header>
+			<nav>
+				<ul>
+					<li><a class="navegador" href='index.html'>Inicio</a></li>
+					<li><a class="navegador" href='pruebas.html'>Pruebas</a></li>
+					<li><a class="navegador" href='contacto.html'>Contacto</a></li>
+				</ul>
+			</nav>
+			<section>
+				<div id='textoPr'>					
+					<div id="content">		
+						<div id="container">
+							<script src="/headtracker/js/utils.js"></script>				
+							<script type="text/javascript" src="/headtracker/js/clmtrackr.js"></script>				
+							<script type="text/javascript" src="/headtracker/models/model_spca_20_svm.js"></script>
+
+							<video id="videoel" width="640" height="480" preload="auto" loop="" ></video>
+							<canvas id="overlay" width="640" height="480"></canvas>
+
+							<div id="controls">
+								<input class="btn" type="button" value="Calibrar puntos" onclick="startCalibration()" id="startCalibration">
+								<input class="btn" type="button" value="Iniciar mascara" onclick="startMask()" id="maskbutton">
+								<p id="mensaje1">No calibrado</p>
+								<p id="mensaje2"></p>
+								<p id="mensaje3"></p>					
+							</div>
+
+							<script>
+								var vid = document.getElementById('videoel');
+								var overlay = document.getElementById('overlay');
+								var overlayCC = overlay.getContext('2d');
+								
+								var mask = false;					
+
+								function startMask() {
+									if (!mask) mask = true;
+									else mask = false;
+								}
+
+								navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+								window.URL = window.URL || window.webkitURL || window.msURL || window.mozURL;
+
+								if (navigator.getUserMedia) {
+									
+									var videoSelector = {video : true};
+									if (window.navigator.appVersion.match(/Chrome\/(.*?) /)) {
+										var chromeVersion = parseInt(window.navigator.appVersion.match(/Chrome\/(\d+)\./)[1], 10);
+										if (chromeVersion < 20) {
+											videoSelector = "video";
+										}
+									};
+								
+									navigator.getUserMedia(videoSelector, function( stream ) {
+										if (vid.mozCaptureStream) {
+											vid.mozSrcObject = stream;
+										} else {
+											vid.src = (window.URL && window.URL.createObjectURL(stream)) || stream;
+										}
+										vid.play();
+									}, function() {
+										alert("There was some problem trying to fetch video from your webcam. If you have a webcam, please make sure to accept when the browser asks for access to your webcam.");
+									});
+								} else {					
+									alert("This demo depends on getUserMedia, which your browser does not seem to support. :(");
+								}
+				
+								var ctrack = new clm.tracker({useWebGL : true});
+								ctrack.init(pModel);
+
+								function startVideo() {
+									vid.play();
+									ctrack.start(vid);
+									drawLoop();
+								}		
+
+								var calibrado = false;
+								var nariz = new Float32Array(4);
+								var longitudBase = 0;
+
+
+								function startCalibration() {					
+									var mens1 = document.getElementById('mensaje1');
+
+									//Cogemos los puntos de referencia (recta de la nariz)
+									var positions = ctrack.getCurrentPosition();
+
+									nariz[0] = positions[33][0];
+									nariz[1] = positions[33][1];
+
+									nariz[2] = positions[62][0];
+									nariz[3] = positions[62][1];
+
+									var x = nariz[2]-nariz[0];
+									var y = nariz[3]-nariz[1];
+
+									x = Math.pow(x,2);
+									y = Math.pow(y,2);
+
+									longitudBase = Math.sqrt(x+y);
+
+									calibrado = true;
+									mens1.innerHTML = "Calibrado!";
+								}			
+
+								startVideo();	
+
+								var longitud = 0;
+
+								function changeBackground(color) {
+								   document.body.style.background = color;
+								}			
+
+								function drawLoop() {						
+									
+									var mens2 = document.getElementById('mensaje2');
+									var mens3 = document.getElementById('mensaje3');
+
+									requestAnimFrame(drawLoop);
+									overlayCC.clearRect(0, 0, 640, 480);
+									var positions = ctrack.getCurrentPosition();					
+				
+									if (mask)	ctrack.draw(overlay);
+
+									if (calibrado) {
+										nariz[0] = positions[33][0];
+										nariz[1] = positions[33][1];
+										nariz[2] = positions[62][0];
+										nariz[3] = positions[62][1];
+
+										var x = nariz[2]-nariz[0];
+										var y = nariz[3]-nariz[1];
+
+										x = Math.pow(x,2);
+										y = Math.pow(y,2);
+
+										longitud = Math.sqrt(x+y);
+
+										var c1 = nariz[2] - nariz[0];
+										var c2 = nariz[3] - nariz[1];
+
+										var angulo = Math.atan(c1/c2);							
+
+										if (angulo > -0.15 && angulo < 0.15) {								
+											if (longitud > longitudBase*1.1) { //Abajo
+												changeBackground("RED");
+											} else if (longitud < longitudBase*0.9) { //Arriba
+												changeBackground("BLUE");	
+											} else {
+												changeBackground("WHITE");
+											}
+										} else if (angulo > 0.15) {	//Izquierda
+											changeBackground("PINK");
+										} else if (angulo < 0.15) { //Derecha
+											changeBackground("YELLOW");									
+										} 														
+									} 
+								} 	
+
+							</script>
+						</div>
+					</div>		
+				</div>
+			</section>			
+		</div>
+	</body>
+</html>
+

@@ -1,0 +1,65 @@
+
+#overlay {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	-o-transform : scaleX(-1);
+	-webkit-transform : scaleX(-1);
+	transform : scaleX(-1);
+	-ms-filter : fliph; /*IE*/
+	filter : fliph; /*IE*/
+
+	width : 640px;
+	height : 480px;
+}
+
+#canvasSeguimiento {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	-o-transform : scaleX(-1);
+	-webkit-transform : scaleX(-1);
+	transform : scaleX(-1);
+	-ms-filter : fliph; /*IE*/
+	filter : fliph; /*IE*/
+
+	width : 640px;
+	height : 480px;
+}
+
+
+#videoel {
+	-o-transform : scaleX(-1);
+	-webkit-transform : scaleX(-1);
+	transform : scaleX(-1);
+	-ms-filter : fliph; /*IE*/
+	filter : fliph; /*IE*/
+
+	width : 640px;
+	height : 480px;
+}
+
+#container {
+	position : relative;
+	width : 370px;
+}
+
+#content {
+	margin-top : 50px;
+	margin-left : auto;
+	margin-right : auto;
+	max-width: 640px;
+}
+
+#sketch, #filter {
+	display: none;
+}
+
+.btn {
+	font-family: 'Lato';
+	font-size: 16px;
+}
+
+#controls {
+	text-align : center;
+}
