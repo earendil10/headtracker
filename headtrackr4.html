@@ -83,16 +83,18 @@
 	<body>
 		<div id="content">		
 			<div id="container">
-				<script src="/headtracker/js/utils.js"></script>				
-				<script type="text/javascript" src="/headtracker/js/clmtrackr.js"></script>				
-				<script type="text/javascript" src="/headtracker/models/model_spca_20_svm.js"></script>
+				<script src="js/utils.js"></script>				
+				<script type="text/javascript" src="js/clmtrackr.js"></script>				
+				<script type="text/javascript" src="models/model_spca_20_svm.js"></script>
 
 				<video id="videoel" width="640" height="480" preload="auto" loop="" ></video>
 				<canvas id="overlay" width="640" height="480"></canvas>
 
 				<div id="controls">
 					<input class="btn" type="button" value="Calibrar puntos" onclick="startCalibration()" id="startCalibration">
-					<input class="btn" type="button" value="Iniciar mascara" onclick="startMask()" id="maskbutton">
+					<input class="btn" type="button" value="Ocultar mascara" onclick="startMask()" id="maskbutton">
+					<input class="btn" type="button" value="Ocultar video" onclick="viewVideo()" id="vidButton">
+
 					<p id="mensaje1">No calibrado</p>
 					<p id="mensaje2"></p>
 					<p id="mensaje3"></p>					
@@ -102,12 +104,38 @@
 					var vid = document.getElementById('videoel');
 					var overlay = document.getElementById('overlay');
 					var overlayCC = overlay.getContext('2d');
+
+					var btn1 = document.getElementById('startCalibration');
+					var btn2 = document.getElementById('maskbutton');
+					var btn3 = document.getElementById('vidButton');
 					
-					var mask = false;					
+					var mask = true;
+					var visible = true;				
 
 					function startMask() {
-						if (!mask) mask = true;
-						else mask = false;
+						if (!mask) {
+							mask = true;
+							btn2.value = "Ocultar mascara";
+						} else {
+							mask = false;
+							btn2.value = "Mostrar mascara";
+						}
+					}
+
+					function viewVideo() {
+						if (!visible) {
+							visible = true;
+							btn3.value = "Ocultar video";
+						} else {
+							visible = false;
+							btn3.value = "Mostrar video";
+						}
+					}
+
+					function startVideo() {
+						vid.play();
+						ctrack.start(vid);
+						drawLoop();
 					}
 
 					navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
@@ -138,13 +166,7 @@
 					}
 	
 					var ctrack = new clm.tracker({useWebGL : true});
-					ctrack.init(pModel);
-
-					function startVideo() {
-						vid.play();
-						ctrack.start(vid);
-						drawLoop();
-					}		
+					ctrack.init(pModel);			
 
 					var calibrado = false;										
 					var longitudBase = 0;
@@ -213,13 +235,20 @@
 						return ret;
 					}
 
-					function drawLoop() {					
+					function drawLoop() {	
+						var mens1 = document.getElementById('mensaje1');				
 
 						requestAnimFrame(drawLoop);
 						overlayCC.clearRect(0, 0, 640, 480);
 						var positions = ctrack.getCurrentPosition();					
-	
+							
 						if (mask)	ctrack.draw(overlay);
+
+						if (visible) { 
+							vid.style.visibility = "visible";
+						} else {
+							vid.style.visibility = "hidden";
+						}
 
 						if (calibrado) {
 							var nariz1 = positions[33];
