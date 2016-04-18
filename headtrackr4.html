@@ -192,23 +192,27 @@
 					function startCalibration() {					
 						var mens1 = document.getElementById('mensaje1');
 
-						//Cogemos los puntos de referencia (recta de la nariz)
-						var positions = ctrack.getCurrentPosition();	
+						if (mask) {
+							//Cogemos los puntos de referencia (recta de la nariz)
+							var positions = ctrack.getCurrentPosition();	
 
-						var nariz1 = positions[33];
-						var nariz2 = positions[62];
+							var nariz1 = positions[33];
+							var nariz2 = positions[62];
 
-						longitudBase = getDistance(nariz1,nariz2);						
+							longitudBase = getDistance(nariz1,nariz2);						
 
-						//Cogemos los puntos extremos de cada lado de la cara
-						var costados1 = positions[1];
-						var costados2 = positions[13];
+							//Cogemos los puntos extremos de cada lado de la cara
+							var costados1 = positions[1];
+							var costados2 = positions[13];
 
-						longitudIzquierda = getDistance(costados1,nariz2);
-						longitudDerecha = getDistance(costados2,nariz2);
+							longitudIzquierda = getDistance(costados1,nariz2);
+							longitudDerecha = getDistance(costados2,nariz2);
 
-						calibrado = true;
-						mens1.innerHTML = "Calibrado!";
+							calibrado = true;
+							mens1.innerHTML = "Calibrado!";
+						} else {
+							mens1.innerHTML = "Inicia la mascara para poder calibrar"
+						}
 					}			
 
 					startVideo();	
