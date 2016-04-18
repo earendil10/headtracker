@@ -146,29 +146,44 @@
 						drawLoop();
 					}		
 
-					var calibrado = false;
-					var nariz = new Float32Array(4);
+					var calibrado = false;										
 					var longitudBase = 0;
+					var longitudDerecha = 0;
+					var longitudIzquierda = 0;
 
+					function getDistance(point1,point2) {
+						var x = Math.pow(point1[0] - point2[0], 2);
+						var y = Math.pow(point1[1] - point2[1], 2);
+
+						return Math.sqrt(x+y);
+					}
+
+					function getAngle(point1,point2) {
+						longitud = getDistance(point1,point2);
+
+						var x = Math.pow(point2[0]-point1[0], 2);
+						var y = Math.pow(point2[1]-point1[1], 2);
+					
+						return Math.atan(x/y);
+					}
 
 					function startCalibration() {					
 						var mens1 = document.getElementById('mensaje1');
 
-						//Cogemos los puntos de referencia (ojos y nariz)
-						var positions = ctrack.getCurrentPosition();
+						//Cogemos los puntos de referencia (recta de la nariz)
+						var positions = ctrack.getCurrentPosition();	
 
-						nariz[0] = positions[33][0];
-						nariz[1] = positions[33][1];
-						nariz[2] = positions[62][0];
-						nariz[3] = positions[62][1];
+						var nariz1 = positions[33];
+						var nariz2 = positions[62];
 
-						var x = nariz[2]-nariz[0];
-						var y = nariz[3]-nariz[1];
+						longitudBase = getDistance(nariz1,nariz2);						
 
-						x = Math.pow(x,2);
-						y = Math.pow(y,2);
+						//Cogemos los puntos extremos de cada lado de la cara
+						var costados1 = positions[1];
+						var costados2 = positions[13];
 
-						longitudBase = Math.sqrt(x+y);
+						longitudIzquierda = getDistance(costados1,nariz2);
+						longitudDerecha = getDistance(costados2,nariz2);
 
 						calibrado = true;
 						mens1.innerHTML = "Calibrado!";
@@ -176,16 +191,29 @@
 
 					startVideo();	
 
-					var longitud = 0;
-
 					function changeBackground(color) {
 					   document.body.style.background = color;
-					}			
+					}				
 
-					function drawLoop() {						
-						
-						var mens2 = document.getElementById('mensaje2');
-						var mens3 = document.getElementById('mensaje3');
+					function getTurnHead(point1,point2,pointReference) {
+
+						var longDerecha = getDistance(point1,pointReference);
+						var longIzquierda = getDistance(point2,pointReference);
+
+						var ret;
+
+						if (longDerecha < longitudDerecha * 0.8) {
+							ret = 'Derecha';
+						} else if (longIzquierda < longitudIzquierda * 0.8) {
+							ret = 'Izquierda';
+						} else {
+							ret = 'Centro';
+						}
+
+						return ret;
+					}
+
+					function drawLoop() {					
 
 						requestAnimFrame(drawLoop);
 						overlayCC.clearRect(0, 0, 640, 480);
@@ -194,36 +222,26 @@
 						if (mask)	ctrack.draw(overlay);
 
 						if (calibrado) {
-							nariz[0] = positions[33][0];
-							nariz[1] = positions[33][1];
-							nariz[2] = positions[62][0];
-							nariz[3] = positions[62][1];
+							var nariz1 = positions[33];
+							var nariz2 = positions[62];		
 
-							var x = nariz[2]-nariz[0];
-							var y = nariz[3]-nariz[1];
+							var costado1 = positions[1];
+							var costado2 = positions[13];
 
-							x = Math.pow(x,2);
-							y = Math.pow(y,2);
+							var angulo = getAngle(nariz1,nariz2);							
+							var lado = getTurnHead(costado1,costado2,nariz2);
 
-							longitud = Math.sqrt(x+y);
-
-							var c1 = nariz[2] - nariz[0];
-							var c2 = nariz[3] - nariz[1];
-
-							var angulo = Math.atan(c1/c2);
-							//mens2.innerHTML = angulo;
-
-							if (angulo > -0.15 && angulo < 0.15) {								
-								if (longitud > longitudBase*1.1) {
+							if (angulo < 0.015 && lado == 'Centro') {								
+								if (longitud > longitudBase*1.1) { //Abajo
 									changeBackground("RED");
-								} else if (longitud < longitudBase*0.9) {
-									changeBackground("BLUE");
+								} else if (longitud < longitudBase*0.9) { //Arriba
+									changeBackground("BLUE");	
 								} else {
 									changeBackground("WHITE");
 								}
-							} else if (angulo > 0.15) {
+							} else if (lado == 'Izquierda') {	//Izquierda
 								changeBackground("PINK");
-							} else if (angulo < 0.15) {
+							} else if (lado == 'Derecha') { //Derecha
 								changeBackground("YELLOW");									
 							} 														
 						} 
