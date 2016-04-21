@@ -97,7 +97,8 @@
 
 					<p id="mensaje1">No calibrado</p>
 					<p id="mensaje2"></p>
-					<p id="mensaje3"></p>					
+					<p id="mensaje3"></p>	
+					<p id="mensaje4"></p>				
 				</div>
 
 				<script>
@@ -171,7 +172,28 @@
 					var calibrado = false;										
 					var longitudBase = 0;
 					var longitudDerecha = 0;
-					var longitudIzquierda = 0;
+					var longitudIzquierda = 0;					
+
+					var color_max_value = 255;
+					var color_min_value = 0;
+
+					function addColorValue(color) {
+						if (color < color_max_value) 
+							return color + 0.5;
+						else
+							return color;
+					}
+
+					function substractColorValue(color) {
+						if (color > color_min_value) 
+							return color - 0.5;						
+						else
+							return color;
+					}
+
+					function changeBackground(red,green,blue) {
+					   document.body.style.background = "rgb("+red+","+green+","+blue+")";
+					}	
 
 					function getDistance(point1,point2) {
 						var x = Math.pow(point1[0] - point2[0], 2);
@@ -215,11 +237,7 @@
 						}
 					}			
 
-					startVideo();	
-
-					function changeBackground(color) {
-					   document.body.style.background = color;
-					}				
+					startVideo();								
 
 					function getTurnHead(point1,point2,pointReference) {
 
@@ -239,9 +257,16 @@
 						return ret;
 					}
 
-					function drawLoop() {	
-						var mens1 = document.getElementById('mensaje1');				
+					var red = 0;
+					var green = 0;
+					var blue = 0;
 
+					function drawLoop() {	
+						var mens1 = document.getElementById('mensaje1');	
+						/*var mens2 = document.getElementById('mensaje2');
+						var mens3 = document.getElementById('mensaje3');
+						var mens4 = document.getElementById('mensaje4');*/
+								
 						requestAnimFrame(drawLoop);
 						overlayCC.clearRect(0, 0, 640, 480);
 						var positions = ctrack.getCurrentPosition();					
@@ -266,17 +291,24 @@
 
 							if (angulo < 0.015 && lado == 'Centro') {								
 								if (longitud > longitudBase*1.1) { //Abajo
-									changeBackground("RED");
+									null;				
 								} else if (longitud < longitudBase*0.9) { //Arriba
-									changeBackground("BLUE");	
+									red = addColorValue(red);	
 								} else {
-									changeBackground("WHITE");
+									red = substractColorValue(red);
+									green = substractColorValue(green);
+									blue = substractColorValue(blue);
 								}
 							} else if (lado == 'Izquierda') {	//Izquierda
-								changeBackground("PINK");
+								green = addColorValue(green);
 							} else if (lado == 'Derecha') { //Derecha
-								changeBackground("YELLOW");									
-							} 														
+								blue = addColorValue(blue);
+							} 
+							/*mens2.innerHTML = lado + red;
+							mens3.innerHTML = lado + green;
+							mens4.innerHTML = lado + blue;*/
+
+							changeBackground(Math.round(red),Math.round(green),Math.round(blue));							
 						} 
 					} 	
 
