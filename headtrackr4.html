@@ -4,7 +4,7 @@
 		<title>Face tracker</title>
 		<meta charset="utf-8">		
 
-		<style>
+		<!--<style>
 			#overlay {
 				position: absolute;
 				top: 0px;
@@ -69,7 +69,8 @@
 			#controls {
 				text-align : center;
 			}
-		</style>
+		</style>-->
+		<link rel="stylesheet" type="text/css" href='styles/estiloFaceColor.css'>
 		<script>
 			// getUserMedia only works over https in Chrome 47+, so we redirect to https. Also notify user if running from file.
 			if (window.location.protocol == "file:") {
@@ -78,7 +79,7 @@
 				window.location.protocol = "https";
 			}
 		</script>
-		<style type="text/css">#xLabsCanvas{pointer-events:none;top:0;left:0;position:fixed;z-index:2147483646;}#xLabsCanvas.allow-pointer{pointer-events:auto;}</style>
+		
 	</head>
 	<body>
 		<div id="content">		
@@ -105,6 +106,10 @@
 					var vid = document.getElementById('videoel');
 					var overlay = document.getElementById('overlay');
 					var overlayCC = overlay.getContext('2d');
+					var imageProcessingCanvas = document.createElement('canvas');
+			        imageProcessingCanvas.setAttribute('width', 640);
+			        imageProcessingCanvas.setAttribute('height', 480);
+					var imageProcessingContext = imageProcessingCanvas.getContext('2d');
 
 					var btn1 = document.getElementById('startCalibration');
 					var btn2 = document.getElementById('maskbutton');
@@ -135,7 +140,9 @@
 
 					function startVideo() {
 						vid.play();
-						ctrack.start(vid);
+						ctrack.start(vid);	//andres
+						//ctrack.start(imageProcessingContext);
+						
 						drawLoop();
 					}
 
@@ -179,18 +186,18 @@
 
 					function addColorValue(color) {
 						if (color < color_max_value) 
-							return color + 0.5;
+							return color + 1;
 						else
 							return color;
 					}
 
 					function substractColorValue(color) {
 						if (color > color_min_value) 
-							return color - 0.5;						
+							return color - 1;						
 						else
 							return color;
 					}
-
+					
 					function changeBackground(red,green,blue) {
 					   document.body.style.background = "rgb("+red+","+green+","+blue+")";
 					}	
@@ -209,11 +216,12 @@
 						var y = Math.pow(point2[1]-point1[1], 2);
 					
 						return Math.atan(x/y);
-					}
+					}					
+
+					var mens1 = document.getElementById('mensaje1');
 
 					function startCalibration() {					
-						var mens1 = document.getElementById('mensaje1');
-
+						
 						if (mask) {
 							//Cogemos los puntos de referencia (recta de la nariz)
 							var positions = ctrack.getCurrentPosition();	
@@ -230,12 +238,25 @@
 							longitudIzquierda = getDistance(costados1,nariz2);
 							longitudDerecha = getDistance(costados2,nariz2);
 
-							calibrado = true;
-							mens1.innerHTML = "Calibrado!";
-						} else {
-							mens1.innerHTML = "Inicia la mascara para poder calibrar"
-						}
-					}			
+							btn1.value = "Volver a calibrar";
+							btn1.onclick = function(){								
+								restartCalibration();
+							}
+
+							ctrack.calibrateFlg(true); 
+							calibrado = true;						
+							mens1.innerHTML = "CALIBRADO";
+						} 
+					}
+
+					function restartCalibration() {
+						calibrado = false;
+						ctrack.calibrateFlg(false);						
+						btn1.value = "Calibrar mascara";
+						btn1.onclick = function(){							
+							startCalibration();
+						}						
+					}	
 
 					startVideo();								
 
@@ -243,9 +264,7 @@
 
 						var longDerecha = getDistance(point1,pointReference);
 						var longIzquierda = getDistance(point2,pointReference);
-
 						var ret;
-
 						if (longDerecha < longitudDerecha * 0.8) {
 							ret = 'Derecha';
 						} else if (longIzquierda < longitudIzquierda * 0.8) {
@@ -253,7 +272,6 @@
 						} else {
 							ret = 'Centro';
 						}
-
 						return ret;
 					}
 
@@ -268,7 +286,12 @@
 						var mens4 = document.getElementById('mensaje4');*/
 								
 						requestAnimFrame(drawLoop);
+
 						overlayCC.clearRect(0, 0, 640, 480);
+						
+
+						imageProcessingContext.drawImage(vid, 0, 0, vid.width, vid.height);
+
 						var positions = ctrack.getCurrentPosition();					
 							
 						if (mask)	ctrack.draw(overlay);
@@ -280,6 +303,7 @@
 						}
 
 						if (calibrado) {
+							mens1.innerHTML = "calibrado";
 							var nariz1 = positions[33];
 							var nariz2 = positions[62];		
 
@@ -304,12 +328,12 @@
 							} else if (lado == 'Derecha') { //Derecha
 								blue = addColorValue(blue);
 							} 
-							/*mens2.innerHTML = lado + red;
-							mens3.innerHTML = lado + green;
-							mens4.innerHTML = lado + blue;*/
 
 							changeBackground(Math.round(red),Math.round(green),Math.round(blue));							
-						} 
+						} else {
+							mens1.innerHTML = "No calibrado";
+							mens1.color = "rgb("+Math.round(255-red)+","+Math.round(255-green)+","+Math.round(255-blue)+")";
+						}
 					} 	
 
 				</script>
