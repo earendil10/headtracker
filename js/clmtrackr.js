@@ -3,11 +3,15 @@
  *
  * Copyright (c) 2013, Audun Mathias Øygard
  * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), 
+ 	to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+ 	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
  * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ 	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+ 	WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 "use strict";
@@ -60,6 +64,10 @@ var clm = {
 		var relaxation = 0.1;
 		
 		var first = true;
+
+		//andres Si hemos calibrado true, para volver a calibrar false
+		var calibrateFlag = false;
+
 		
 		var convergenceLimit = 0.01;
 		
@@ -292,7 +300,7 @@ var clm = {
 				runnerBox = box;
 			}
 			// start named timeout function
-			runnerTimeout = requestAnimFrame(runnerFunction);
+			runnerTimeout = requestAnimFrame(runnerFunction); //andres
 		}
 
 		/*
@@ -300,7 +308,7 @@ var clm = {
 		 */
 		this.stop = function() {
 			// stop the running tracker if any exists
-			cancelRequestAnimFrame(runnerTimeout);
+			cancelRequestAnimFrame(runnerTimeout); //andres
 		}
 
 		/*
@@ -370,8 +378,8 @@ var clm = {
 			var patchPositions = calculatePositions(currentParameters, false);
 			
 			// check whether tracking is ok
-			if (scoringWeights && (facecheck_count % 10 == 0)) {
-				if (!checkTracking()) {
+			if (scoringWeights && (facecheck_count % 10 == 0)) {				
+				if (!checkTracking() && !calibrateFlag) { //andres
 					// reset all parameters
 					first = true;
 					scoringHistory = [];
@@ -666,6 +674,13 @@ var clm = {
 					drawPath(cc, paths[i], params);
 				}
 			}
+
+			// Draw the face rectangle - andres
+		}
+
+		// andres 
+		this.calibrateFlg = function(valor) {
+			calibrateFlag = valor;
 		}
 
 		/*
@@ -785,7 +800,7 @@ var clm = {
 		}
 
 		var runnerFunction = function() {
-			runnerTimeout = requestAnimFrame(runnerFunction);
+			runnerTimeout = requestAnimFrame(runnerFunction); //andres
 			// schedule as many iterations as we can during each request
 			var startTime = (new Date()).getTime();
 			while (((new Date()).getTime() - startTime) < 16) {
@@ -979,8 +994,13 @@ var clm = {
 			//return vecmatrix;
 		}
 		
+		//Añado metodo para dejar checkTracking true
+
+
+
 		// calculate score of current fit
 		var checkTracking = function() {			
+		//this.checkTracking = function() {
 			scoringContext.drawImage(sketchCanvas, Math.round(msxmin+(msmodelwidth/4.5)), Math.round(msymin-(msmodelheight/12)), Math.round(msmodelwidth-(msmodelwidth*2/4.5)), Math.round(msmodelheight-(msmodelheight/12)), 0, 0, 20, 22);
 			// getImageData of canvas
 			var imgData = scoringContext.getImageData(0,0,20,22);
