@@ -1,0 +1,44 @@
+
+#overlay {
+	position: relative;	
+	-o-transform : scaleX(-1);
+	-webkit-transform : scaleX(-1);
+	transform : scaleX(-1);
+	-ms-filter : fliph; /*IE*/
+	filter : fliph; /*IE*/
+
+	width : 320px;
+	height : 240px;
+}
+
+#videoel {
+	position: absolute;
+	-o-transform : scaleX(-1);
+	-webkit-transform : scaleX(-1);
+	transform : scaleX(-1);
+	-ms-filter : fliph; /*IE*/
+	filter : fliph; /*IE*/
+
+	width : 320px;
+	height : 240px;
+}
+
+#container {
+	position : relative;
+	width : 320px;
+}
+
+#content {
+	margin-top : 50px;
+	margin-left : auto;
+	margin-right : auto;
+	max-width: 320px;
+}
+
+#controles {	
+    position: absolute;
+    border: 3px solid #73AD21;
+    top: 0px;
+    right: 0px;
+    z-index: 1;
+}

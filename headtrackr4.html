@@ -3,73 +3,7 @@
 	<head>
 		<title>Face tracker</title>
 		<meta charset="utf-8">		
-
-		<!--<style>
-			#overlay {
-				position: absolute;
-				top: 0px;
-				left: 0px;
-				-o-transform : scaleX(-1);
-				-webkit-transform : scaleX(-1);
-				transform : scaleX(-1);
-				-ms-filter : fliph; /*IE*/
-				filter : fliph; /*IE*/
-
-				width : 640px;
-				height : 480px;
-			}
-
-			#canvasSeguimiento {
-				position: absolute;
-				top: 0px;
-				left: 0px;
-				-o-transform : scaleX(-1);
-				-webkit-transform : scaleX(-1);
-				transform : scaleX(-1);
-				-ms-filter : fliph; /*IE*/
-				filter : fliph; /*IE*/
-
-				width : 640px;
-				height : 480px;
-			}
-
-
-			#videoel {
-				-o-transform : scaleX(-1);
-				-webkit-transform : scaleX(-1);
-				transform : scaleX(-1);
-				-ms-filter : fliph; /*IE*/
-				filter : fliph; /*IE*/
-
-				width : 640px;
-				height : 480px;
-			}
-			
-			#container {
-				position : relative;
-				width : 370px;
-			}
-			
-			#content {
-				margin-top : 50px;
-				margin-left : auto;
-				margin-right : auto;
-				max-width: 640px;
-			}
-
-			#sketch, #filter {
-				display: none;
-			}
-
-			.btn {
-				font-family: 'Lato';
-				font-size: 16px;
-			}
-
-			#controls {
-				text-align : center;
-			}
-		</style>-->
+		
 		<link rel="stylesheet" type="text/css" href='styles/estiloFaceColor.css'>
 		<script>
 			// getUserMedia only works over https in Chrome 47+, so we redirect to https. Also notify user if running from file.
@@ -106,10 +40,6 @@
 					var vid = document.getElementById('videoel');
 					var overlay = document.getElementById('overlay');
 					var overlayCC = overlay.getContext('2d');
-					var imageProcessingCanvas = document.createElement('canvas');
-			        imageProcessingCanvas.setAttribute('width', 640);
-			        imageProcessingCanvas.setAttribute('height', 480);
-					var imageProcessingContext = imageProcessingCanvas.getContext('2d');
 
 					var btn1 = document.getElementById('startCalibration');
 					var btn2 = document.getElementById('maskbutton');
@@ -140,8 +70,7 @@
 
 					function startVideo() {
 						vid.play();
-						ctrack.start(vid);	//andres
-						//ctrack.start(imageProcessingContext);
+						ctrack.start(vid);	//andres						
 						
 						drawLoop();
 					}
@@ -287,10 +216,7 @@
 								
 						requestAnimFrame(drawLoop);
 
-						overlayCC.clearRect(0, 0, 640, 480);
-						
-
-						imageProcessingContext.drawImage(vid, 0, 0, vid.width, vid.height);
+						overlayCC.clearRect(0, 0, 640, 480);												
 
 						var positions = ctrack.getCurrentPosition();					
 							
