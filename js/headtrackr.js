@@ -1834,7 +1834,7 @@ headtrackr.headposition.Tracker = function(facetrackrObj, camwidth, camheight, p
 		// Transformation from position relative to camera, to position relative to center of screen
 		if (params.distance_from_camera_to_screen === undefined) {
 			// default is 11.5 cm approximately
-			y = y + 11.5;
+			y = y + 30.5;
 		} else {
 			y = y + params.distance_from_camera_to_screen;
 		}
