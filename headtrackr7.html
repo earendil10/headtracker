@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-xlabs-extension="1" data-xlabs-extension-ready="1" data-xlabs-extension-version="2.5.5">
+	<head>
+		<title>Face tracker</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+		<link rel="stylesheet" type="text/css" href='styles/estiloFaceAuto.css'>
+		
+		<script>
+			// getUserMedia only works over https in Chrome 47+, so we redirect to https. Also notify user if running from file.
+			if (window.location.protocol == "file:") {
+				alert("You seem to be running this example directly from a file. Note that these examples only work when served from a server or localhost due to canvas cross-domain restrictions.");
+			} else if (window.location.hostname !== "localhost" && window.location.protocol !== "https:"){
+				window.location.protocol = "https";
+			}
+		</script>
+
+		<!--Adobe Edge Runtime-->
+	    <script type="text/javascript" charset="utf-8" src="edge_includes/edge.6.0.0.min.js"></script>
+	    <style>
+	        .edgeLoad-EDGE-675796740 { visibility:hidden; }
+	    </style>
+	    <script>
+	        AdobeEdge.loadComposition('index', 'EDGE-675796740', {
+	            scaleToFit: "height",
+	            centerStage: "horizontal",
+	            minW: "0px",
+	            maxW: "undefined",
+	            width: "550px",
+	            height: "400px"
+	        }, {dom: [ ]}, {dom: [ ]});
+	    </script>
+	    <!--Adobe Edge Runtime End-->    
+
+		<script src="js/utils.js"></script>				
+		<script src="js/facetrackr.js"></script>
+		<script src="js/headtrackr.js"></script>
+
+		<script type="text/javascript" src="models/model_spca_20_svm.js"></script>
+		
+	</head>
+	<body style="margin:0;padding:0;">
+		<div id="Stage" class="EDGE-675796740">
+        	<div id="content">      
+            	<div id="container">
+				
+
+					<video id="videoel" width="640" height="480" preload="auto" loop="" position="absolute; left: 30px; top: 50px;" ></video> <!--style="position: absolute; display: none;"-->
+					<canvas id="overlay" width="640" height="480" position="relative; left: 30px; top: 50px;"></canvas>					
+					<!--<canvas id="debug" width="640" height="480" style="position: absolute; top: 0px; z-index: 100002; display: none;"></canvas>-->
+
+					<!--<div id="controls">
+						<p id="mensaje1"></p>
+						<p id="mensaje2"></p>
+						<p id="mensaje3"></p>	
+						<p id="mensaje4"></p>				
+					</div>-->
+
+					<script>
+						/*
+							I Aear cân ven na mar
+						*/
+						/*var mens1 = document.getElementById('mensaje1');
+						var mens2 = document.getElementById('mensaje2');
+						var mens3 = document.getElementById('mensaje3');
+						var mens4 = document.getElementById('mensaje4');
+						
+						mens1.innerHTML = 'patata';*/
+
+						var vid = document.getElementById('videoel');
+						var vidOverlay = document.getElementById('overlay');
+						var vidOverlayCC = vidOverlay.getContext('2d');
+
+						//var debugOverlay = document.getElementById('debug');					
+
+						var facetracker = new ftrack.ftracker();
+						facetracker.init(vid,vidOverlay,pModel);
+						facetracker.start();
+
+						var htracker = new headtrackr.Tracker({calcAngles : true, ui : false, headPosition : false/*, debug : debugOverlay*/});
+						htracker.init(vid, vidOverlay);
+						htracker.start();		
+
+						var canvas = document.createElement('canvas');
+						var cntx = canvas.getContext('2d');		
+
+						// Animation Items
+						//-------------------
+						// Top
+						var topball = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('topball');
+                        var topballSound = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('topball').$("bells007")[0];
+                        // Bottom
+                        var bottomball = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('bottomball');
+                        var bottomballSound = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('bottomball').$("fuzz2")[0];
+                        // Left
+                        var leftball = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('redball').getSymbol("vibro");
+                        var leftballEffect = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('redball').getSymbol("vibro").$("vibro2")[0];
+                        // Right
+                        var rightball = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol("rightball").getSymbol("knocker");
+                        //-------------------
+
+                        facetracker.setItems(topball,bottomball,leftball,rightball);
+                        facetracker.setEffects(topballSound,bottomballSound,leftballEffect,null);
+
+						function drawLoop() {
+							requestAnimFrame(drawLoop);	
+
+							document.addEventListener("facetrackingEvent", function( event ) {
+
+								if (facetracker.checkCalibration(event)) {
+									if (!facetracker.getCalibrate())  facetracker.setCalibrate(true);
+									facetracker.track();
+									//mens2.innerHTML = 'Calibrado';
+								} else {
+									facetracker.setCalibrate(false);
+
+									/*x1 = event.x - event.width/2;
+									y1 = event.y - event.height/2;
+									x2 = x1 + event.width;
+									y2 = y1 + event.height;
+
+									var canvas = document.createElement('canvas');
+									var canvasCtx = canvas.getContext('2d');
+
+									canvas.width = event.width;
+									canvas.height = event.height;
+									
+									canvasCtx.drawImage(vid,x1,y1,event.width,event.height,0,0,event.width,event.height);
+
+									var image = new Image(canvas.width,canvas.height);
+									imgUrl = canvas.toDataURL();
+									image.src = imgUrl;
+
+									facetracker.recalibrate(image,canvas,x1,y1);*/
+									//mens2.innerHTML = 'NO Calibrado';
+								}
+								
+								vidOverlayCC.clearRect(0,0,vidOverlay.width,vidOverlay.height);
+								facetracker.drawRectangle(vidOverlayCC,event);
+								facetracker.drawMask(vidOverlay);
+
+							});													
+						};
+						
+
+						drawLoop();					
+						
+						navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+						window.URL = window.URL || window.webkitURL || window.msURL || window.mozURL;
+
+						if (navigator.getUserMedia) {
+							
+							var videoSelector = {video : true};
+							if (window.navigator.appVersion.match(/Chrome\/(.*?) /)) {
+								var chromeVersion = parseInt(window.navigator.appVersion.match(/Chrome\/(\d+)\./)[1], 10);
+								if (chromeVersion < 20) {
+									videoSelector = "video";
+								}
+							};
+						
+							navigator.getUserMedia(videoSelector, function( stream ) {
+								if (vid.mozCaptureStream) {
+									vid.mozSrcObject = stream;
+								} else {
+									vid.src = (window.URL && window.URL.createObjectURL(stream)) || stream;
+								}
+								vid.play();
+							}, function() {
+								alert("There was some problem trying to fetch video from your webcam. If you have a webcam, please make sure to accept when the browser asks for access to your webcam.");
+							});
+						} else {					
+							alert("This demo depends on getUserMedia, which your browser does not seem to support. :(");
+						}
+
+					</script>
+				</div>
+			</div>
+		</div>
+	</body>
+
+</html>
