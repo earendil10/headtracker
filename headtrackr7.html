@@ -4,7 +4,7 @@
 		<title>Face tracker</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 		<meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
-		<link rel="stylesheet" type="text/css" href='styles/estiloFaceAuto.css'>
+		<link rel="stylesheet" type="text/css" href='styles/mainStyle.css'>
 		
 		<script>
 			// getUserMedia only works over https in Chrome 47+, so we redirect to https. Also notify user if running from file.
@@ -60,6 +60,7 @@
 						/*
 							I Aear cân ven na mar
 						*/
+
 						/*var mens1 = document.getElementById('mensaje1');
 						var mens2 = document.getElementById('mensaje2');
 						var mens3 = document.getElementById('mensaje3');
@@ -84,19 +85,24 @@
 						var canvas = document.createElement('canvas');
 						var cntx = canvas.getContext('2d');		
 
+						var topball,bottomball,leftball,rightball;
+						var topballSound,bottomballSound,leftballEffect;
 						// Animation Items
 						//-------------------
-						// Top
-						var topball = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('topball');
-                        var topballSound = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('topball').$("bells007")[0];
-                        // Bottom
-                        var bottomball = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('bottomball');
-                        var bottomballSound = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('bottomball').$("fuzz2")[0];
-                        // Left
-                        var leftball = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('redball').getSymbol("vibro");
-                        var leftballEffect = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('redball').getSymbol("vibro").$("vibro2")[0];
-                        // Right
-                        var rightball = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol("rightball").getSymbol("knocker");
+						AdobeEdge.bootstrapCallback(function(compId) {
+			                // Top
+							topball = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('topball');
+	                        topballSound = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('topball').$("bells007")[0];
+	                        // Bottom
+	                        bottomball = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('bottomball');
+	                        bottomballSound = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('bottomball').$("fuzz2")[0];
+	                        // Left
+	                        leftball = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('redball').getSymbol("vibro");
+	                        leftballEffect = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol('redball').getSymbol("vibro").$("vibro2")[0];
+	                        // Right
+	                        rightball = AdobeEdge.getComposition("EDGE-675796740").getStage().getSymbol("rightball").getSymbol("knocker");
+			            });
+						
                         //-------------------
 
                         facetracker.setItems(topball,bottomball,leftball,rightball);
@@ -109,7 +115,7 @@
 
 								if (facetracker.checkCalibration(event)) {
 									if (!facetracker.getCalibrate())  facetracker.setCalibrate(true);
-									facetracker.track();
+									//facetracker.track();
 									//mens2.innerHTML = 'Calibrado';
 								} else {
 									facetracker.setCalibrate(false);
