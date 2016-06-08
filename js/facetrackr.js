@@ -8,7 +8,8 @@ var ftrack = {
 		var model;
 		var topItem,bottomItem,leftItem,rightItem;
 		var topEffect,bottomEffect,leftEffect,rightEffect;
-		var bCount = 0,rCount = 0; //timer animation
+		var bCount = 0;
+		var rCount = 0; //timer animation
 
 		this.init = function(videoElement,canvasElement,mod) {
 			vidElement = videoElement;
@@ -77,10 +78,10 @@ var ftrack = {
 			context.stroke();
 		}
 
-		this.setItems = function(topall,bottomball,leftball,rightball) {
+		this.setItems = function(topball,bottomball,leftball,rightball) {
 			topItem = topball;
-			bottomItem = bottomBall;
-			leftItem = leftBall;
+			bottomItem = bottomball;
+			leftItem = leftball;
 			rightItem = rightball;
 		}
 
